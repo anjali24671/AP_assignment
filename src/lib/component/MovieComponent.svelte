@@ -57,6 +57,7 @@
         <div class="poster-container">
             <button class="poster-button" on:click={gotoDetail}>
                 <img class="poster-image" src={poster} alt={title} key={poster} />
+
             </button>
             <div class="rating-badge">
                 {vote_average}
@@ -83,8 +84,9 @@
         display: flex;
         flex-direction: column;
         gap: 1rem;
+        padding:10px;
         margin: 1rem;
-        padding: 1rem;
+        min-width:220px;
         border-radius: 8px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         background-color: #fff;
@@ -95,6 +97,7 @@
         width: 200px;
         height: 300px;
         overflow: hidden;
+       
         border-radius: 8px;
     }
 
@@ -144,7 +147,7 @@
     .details-footer {
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: end;
         gap: 1rem;
     }
 
