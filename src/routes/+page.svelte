@@ -1,7 +1,7 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
     import MovieComponent from '../lib/component/MovieComponent.svelte';
-
+    import {goto} from '$app/navigation'
     export let data;
 
     let movieContainer;
@@ -202,18 +202,24 @@
 </script>
 
 <div class="container">
-    <header class="header">
+    <header class="header  ">
         <h1 class="title">The Movie Browser</h1>
-        <div class="search-bar">
-            <input id="search" placeholder="Search a movie..." bind:value={searchQuery} list="movie-names" class="search-input">
-            <datalist id="movie-names">
-                {#each movieNames as name}
-                    <option value={name}></option>
-                {/each}
-            </datalist>
-            <button class="search-button" on:click={handleSearch}>Search</button>
-            <button class="filter-button" on:click={showFilters}>Filter</button>
+        <div class="flex min-w-[100vw]  items-center justify-center gap-4">
+            <div class="search-bar">
+                <div class="search-button  md:hidden ">Saved Movies</div>
+                <input id="search" placeholder="Search a movie..." bind:value={searchQuery} list="movie-names" class="search-input">
+                <datalist id="movie-names">
+                    {#each movieNames as name}
+                        <option value={name}></option>
+                    {/each}
+                </datalist>
+                <button class="search-button" on:click={handleSearch}>Search</button>
+                <button class="filter-button" on:click={showFilters}>Filter</button>
+            </div>
+            <div class="search-button hidden md:block md:absolute right-2 "><button on:click={()=>goto('/saved_movies')}>Saved Movies</button></div>
         </div>
+        
+        
     </header>
     
     {#if showFilter}
@@ -273,6 +279,7 @@
         flex-direction: column;
         align-items: center;
         padding: 20px;
+        min-width:100vw;
         background-color: #f0f0f0;
     }
 
@@ -290,7 +297,7 @@
     .search-bar {
         display: flex;
         gap: 10px;
-        flex-direction: column;
+       
         align-items: center;
     }
 
