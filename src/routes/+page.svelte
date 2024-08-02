@@ -139,7 +139,7 @@
                     vote_average={movie.vote_average}
                     genre_ids={movie.genre_ids}
                     poster_path={movie.poster_path}
-                    data={data}
+                    data={movie}
                     on:click={() => toggleSave(movie.id)}
                 />
             {/each}
