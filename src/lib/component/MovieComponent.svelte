@@ -53,27 +53,118 @@
 </script>
 
 {#if poster}
-    <div class="flex flex-col gap-1 mx-4 my-3">
-        <div class="w-[200px] h-[250px] relative bg-green-100 shadow-l-lg">
-            <button on:click={gotoDetail}>
-                <img class="w-full h-full object-cover" src={poster} alt={title} key={poster} on:load={() => console.log('Image loaded')} />
+    <div class="movie-card">
+        <div class="poster-container">
+            <button class="poster-button" on:click={gotoDetail}>
+                <img class="poster-image" src={poster} alt={title} key={poster} />
             </button>
-            <div class="w-[50px] h-[50px] absolute bottom-5 rounded-[50%] right-[-20px] flex items-center justify-center bg-yellow-100">
+            <div class="rating-badge">
                 {vote_average}
             </div>
         </div>
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-lg mt-2">{title}</h1>
-                <h2>{genres}</h2>
+        <div class="movie-details">
+            <h1 class="movie-title">{title}</h1>
+            <div class="details-footer">
+                <h2 class="movie-genres">{genres}</h2>
+                <button class="save-button" on:click={toggleSave}>
+                    {#if !save}
+                        Save
+                    {:else}
+                        Remove
+                    {/if}
+                </button>
             </div>
-            <button on:click={toggleSave}>
-                {#if !save}
-                    Save
-                {:else}
-                    Remove
-                {/if}
-            </button>
         </div>
     </div>
 {/if}
+
+<style>
+    .movie-card {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin: 1rem;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        background-color: #fff;
+    }
+
+    .poster-container {
+        position: relative;
+        width: 200px;
+        height: 300px;
+        overflow: hidden;
+        border-radius: 8px;
+    }
+
+    .poster-button {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: none;
+        cursor: pointer;
+        padding: 0;
+        margin: 0;
+    }
+
+    .poster-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+
+    .rating-badge {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        background-color: #ffeb3b;
+        color: #000;
+        padding: 5px 10px;
+        border-radius: 50%;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+
+    .movie-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .movie-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin: 0;
+        color: #333;
+    }
+
+    .details-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .movie-genres {
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .save-button {
+        background-color: #ff5722;
+        color: #fff;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: background-color 0.3s ease;
+    }
+
+    .save-button:hover {
+        background-color: #e64a19;
+    }
+</style>

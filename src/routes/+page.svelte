@@ -162,6 +162,7 @@
         isFilterMode = true; // Switch to filter mode
         isSearchMode = false; // Disable search mode
         fetchFilterSearch(filterPage);
+        showFilters(); // Close the filter menu
     }
 
     function selectMovieName(name) {
@@ -200,47 +201,43 @@
     }
 </script>
 
-<div class="flex items-center gap-5 justify-center flex-col">
-    <h1 class="text-green-400">The Movie Browser</h1>
-    <div class="relative">
-        <input id="search" placeholder="Search a movie..." bind:value={searchQuery} list="movie-names">
-        <datalist id="movie-names">
-            {#each movieNames as name}
-                <option value={name}></option>
-            {/each}
-        </datalist>
-        <button on:click={handleSearch}>Search</button>  
-        <button on:click={showFilters}>Filter</button>
+<div class="container">
+    <header class="header">
+        <h1 class="title">The Movie Browser</h1>
+        <div class="search-bar">
+            <input id="search" placeholder="Search a movie..." bind:value={searchQuery} list="movie-names" class="search-input">
+            <datalist id="movie-names">
+                {#each movieNames as name}
+                    <option value={name}></option>
+                {/each}
+            </datalist>
+            <button class="search-button" on:click={handleSearch}>Search</button>
+            <button class="filter-button" on:click={showFilters}>Filter</button>
+        </div>
+    </header>
+    
+    {#if showFilter}
+        <div class="filter-menu">       
+            <label>Genre</label>
+            <input id="genre" placeholder="Search genres..." list="genre-list" on:input={handleGenreInput} class="filter-input">
+            <datalist id="genre-list">
+                {#each data.genre as genre}
+                    <option value={genre.name} data-id={genre.id}></option>
+                {/each}
+            </datalist>
 
-        {#if showFilter}
-            <div class="absolute flex z-10 flex-col my-2 p-3 bg-red-400 w-full">       
-                <label>Genre</label>
-                <input id="genre" placeholder="Search genres..." list="genre-list" on:input={handleGenreInput}>
-                <input type="hidden" id="genre-id"> <!-- Store the numerical value -->
-
-                <datalist id="genre-list">
-                    {#each data.genre as genre}
-                        <option value={genre.name} data-id={genre.id}></option>        
-                    {/each}
-                </datalist>
-
-                <label>Release Year</label>
-                <div class="flex w-[90%] gap-2">
-                    <div>
-                        <input id="releaseStart" class="w-[50px]" placeholder="From" bind:value={releaseStart}>  
-                    </div>
-                    <div>
-                        <input id="releaseEnd" class="w-[50px]" placeholder="To" bind:value={releaseEnd}>      
-                    </div>
-                </div>
-
-                <label>Rating</label>
-                <input id="rating" bind:value={rating}>
-
-                <button on:click={handleFilterSearch}>Search</button>
+            <label>Release Date</label>
+            <div class="date-range">
+                <input id="releaseStart" type="date" bind:value={releaseStart} class="date-input" />
+                <input id="releaseEnd" type="date" bind:value={releaseEnd} class="date-input" />
             </div>
-        {/if}
-    </div>
+
+            <label>Rating</label>
+            <input id="rating" type="number" min="0" max="10" step="0.1" bind:value={rating} class="filter-input">
+
+            <button class="filter-button" on:click={handleFilterSearch}>Apply Filters</button>
+        </div>
+    {/if}
 
     {#if isLoading && initialPage === 1}
         <!-- Show loading animation -->
@@ -248,7 +245,7 @@
             <div class="loader"></div>
         </div>
     {:else}
-        <div bind:this={movieContainer} class="grid lg:grid-cols-5 grid-cols-2">
+        <div bind:this={movieContainer} class="movie-grid">
             {#each movies as movie (movie.id)}
                 <MovieComponent
                     title={movie.title}
@@ -259,26 +256,136 @@
                     data={movie}
                     genre_list={data.genre}
                     on:click={() => toggleSave(movie.id)}
+                    class="movie-item"
                 />
             {/each}
         </div>
     {/if}
+
     {#if (isSearchMode && searchPage < totalSearchPages) || (isFilterMode && filterPage < totalFilterPages) || (!isSearchMode && !isFilterMode && initialPage < totalInitialPages)}
-        <div id="intersector">Loading more...</div>
+        <div id="intersector" class="loading-more">Loading more...</div>
     {/if}
 </div>
 
 <style>
+    .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        background-color: #f0f0f0;
+    }
+
+    .header {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .title {
+        font-size: 2rem;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .search-bar {
+        display: flex;
+        gap: 10px;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .search-input {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        width: 300px;
+    }
+
+    .search-button,
+    .filter-button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .filter-button {
+        background-color: #28a745;
+    }
+
+    .search-button:hover,
+    .filter-button:hover {
+        opacity: 0.9;
+    }
+
+    .filter-menu {
+        position: absolute;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: white;
+        border: 1px solid #ddd;
+        padding: 20px;
+        border-radius: 4px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 10;
+        width: 300px;
+    }
+
+    .filter-input,
+    .date-input {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .date-range {
+        display: flex;
+        gap: 10px;
+    }
+
+    .movie-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        width: 100%;
+        max-width: 1200px;
+    }
+
+    .movie-item {
+        background-color: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s;
+    }
+
+    .movie-item:hover {
+        transform: scale(1.02);
+    }
+
+    .movie-item img {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+        max-height: 300px; /* Ensure the image doesn't exceed the container height */
+    }
+
     .loader-container {
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 200px; /* Adjust based on your layout */
+        height: 200px;
     }
 
     .loader {
-        border: 16px solid #f3f3f3; /* Light grey */
-        border-top: 16px solid #3498db; /* Blue */
+        border: 16px solid #f3f3f3;
+        border-top: 16px solid #007bff;
         border-radius: 50%;
         width: 120px;
         height: 120px;
@@ -288,5 +395,12 @@
     @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
+    }
+
+    .loading-more {
+        font-size: 1.2rem;
+        color: #007bff;
+        text-align: center;
+        margin: 20px 0;
     }
 </style>
