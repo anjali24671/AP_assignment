@@ -1,5 +1,7 @@
 <script>
     import { onMount } from 'svelte';
+    import { setMovie } from '../../stores/detailMovieStore';
+    import { goto } from '$app/navigation'
 
     let saveMovies = [];
 
@@ -15,6 +17,12 @@
         saveMovies = saveMovies.filter(movie => movie.id !== id);
         localStorage.setItem('saveMovies', JSON.stringify(saveMovies));
     }
+
+    function gotoDetail(id) {
+        setMovie(id); // Set the movie data in the store
+        console.log('hellp')
+        goto(`/detail/${id}`); // Navigate to the detail page
+    }
 </script>
 
 {#if saveMovies.length === 0}
@@ -22,10 +30,10 @@
 {:else}
     <div class="saved-movies-container">
         {#each saveMovies as movie (movie.id)}
-            <div class="movie-card">
-                <div class="poster-container">
+            <div class="movie-card" on:click={()=>gotoDetail(movie.id)}>
+                <button class="poster-container">
                     <img class="poster-image" src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`} alt={movie.title}>
-                </div>
+                </button>
                 <div class="movie-details">
                     <h1 class="movie-title">{movie.title}</h1>
                     <h2 class="movie-genres">{movie.genre_ids.join(', ')}</h2>
