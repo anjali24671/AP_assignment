@@ -11,24 +11,66 @@
     let movies = [];
     let savedMovies = new Set(); // To keep track of saved movie IDs
     let isLoading = true; // State variable for loading
+    let initialPage = 1; // Start from page 1 for initial movies
+    let searchPage = 1; // Start from page 1 for search results
+    let filterPage = 1; // Start from page 1 for filtered results
+    let totalInitialPages = 10; // Track total number of pages for initial movies
+    let totalSearchPages = 10; // Track total number of pages for search results
+    let totalFilterPages = 5; // Track total number of pages for filtered results
+    let isSearchMode = false; // To distinguish between initial fetch and search mode
+    let isFilterMode = false; // To distinguish between initial fetch and filter mode
+
+    // Reactive variables for filter inputs
+    let genreId = '';
+    let releaseStart = '';
+    let releaseEnd = '';
+    let rating = '';
 
     onMount(async () => {
         searchInput = document.querySelector('#search');
         intersector = document.querySelector('#intersector');
-        await fetchInitialMovies();
+        await fetchInitialMovies(initialPage);
+
+        // Setup Intersection Observer for infinite scrolling
+        const observer = new IntersectionObserver(async (entries) => {
+            if (entries[0].isIntersecting && !isLoading) {
+                if (isSearchMode && searchPage < totalSearchPages) {
+                    searchPage += 1;
+                    await fetchSearchMovies(searchInput.value, searchPage);
+                } else if (isFilterMode && filterPage < totalFilterPages) {
+                    filterPage += 1;
+                    await fetchFilterSearch(filterPage);
+                } else if (!isSearchMode && !isFilterMode && initialPage < totalInitialPages) {
+                    initialPage += 1;
+                    await fetchInitialMovies(initialPage);
+                }
+            }
+        }, {
+            root: null,
+            rootMargin: '0px',
+            threshold: 1.0
+        });
+
+        observer.observe(intersector);
     });
 
     function showFilters() {
         showFilter = !showFilter;
     }
 
-    async function fetchInitialMovies(page = '1') {
+    async function fetchInitialMovies(page = 1) {
         isLoading = true; // Set loading to true before fetch
+
         try {
             const movieRes = await fetch(`/api/initialMovies?page=${page}`);
             if (!movieRes.ok) throw new Error(`Failed to fetch initial movies: ${movieRes.statusText}`);
             const moviesData = await movieRes.json();
-            movies = moviesData.results;
+            if (page === 1) {
+                movies = moviesData.results;
+            } else {
+                movies = [...movies, ...moviesData.results]; // Append new movies
+            }
+            totalInitialPages = moviesData.total_pages; // Update total pages for initial movies
         } catch (e) {
             console.error('Error fetching initial movies:', e);
         } finally {
@@ -36,13 +78,18 @@
         }
     }
 
-    async function fetchSearchMovies(title, page = '1') {
-        isLoading = true; // Set loading to true before fetch
+    async function fetchSearchMovies(title, page = 1) {
+        if(page === 1) isLoading = true; // Set loading to true before fetch
         try {
             const movieRes = await fetch(`/api/searchMovies?title=${encodeURIComponent(title)}&page=${page}`);
             if (!movieRes.ok) throw new Error(`Failed to search movies: ${movieRes.statusText}`);
             const moviesData = await movieRes.json();
-            movies = moviesData.results;
+            if (page === 1) {
+                movies = moviesData.results;
+            } else {
+                movies = [...movies, ...moviesData.results]; // Append new movies
+            }
+            totalSearchPages = moviesData.total_pages; // Update total pages for search results
         } catch (e) {
             console.error('Error searching movies:', e);
         } finally {
@@ -50,18 +97,21 @@
         }
     }
 
-    async function fetchFilterSearch() {
-        isLoading = true; // Set loading to true before fetch
-        const genre = document.querySelector('#genre-id').value;
-        const releaseYearStart = document.querySelector('#releaseStart').value;        
-        const releaseYearEnd = document.querySelector('#releaseEnd').value;
-        const rating = document.querySelector('#rating').value;
+    async function fetchFilterSearch(page = 1) {
+        if(page === 1) isLoading = true; // Set loading to true before fetch
+
+        console.log(`Fetching filtered movies, genre: ${genreId}, releaseYearStart: ${releaseStart}, releaseYearEnd: ${releaseEnd}, rating: ${rating}, page: ${page}`);
 
         try {
-            const filterRes = await fetch(`/api/filterSearch?genre=${genre}&releaseYearStart=${releaseYearStart}&releaseYearEnd=${releaseYearEnd}&rating=${rating}`);
+            const filterRes = await fetch(`/api/filterSearch?genre=${genreId}&releaseYearStart=${releaseStart}&releaseYearEnd=${releaseEnd}&rating=${rating}&page=${page}`);
             if (!filterRes.ok) throw new Error(`Failed to fetch filtered search: ${filterRes.statusText}`);
             const filterData = await filterRes.json();
-            movies = filterData.results;
+            if (page === 1) {
+                movies = filterData.results;
+            } else {
+                movies = [...movies, ...filterData.results]; // Append new movies
+            }
+            totalFilterPages = filterData.total_pages; // Update total pages for filtered search results
         } catch (e) {
             console.error('Error fetching filtered search:', e);
         } finally {
@@ -70,10 +120,7 @@
     }
 
     function handleGenreInput(event) {
-        const selectedOption = Array.from(document.querySelector('#genre-list').options).find(option => option.value === event.target.value);
-        if (selectedOption) {
-            document.querySelector('#genre-id').value = selectedOption.getAttribute('data-id');
-        }
+        genreId = Array.from(document.querySelector('#genre-list').options).find(option => option.value === event.target.value)?.getAttribute('data-id') || '';
     }
 
     function toggleSave(movieId) {
@@ -87,20 +134,35 @@
     function isSaved(movieId) {
         return savedMovies.has(movieId);
     }
+
+    function handleSearch() {
+        searchPage = 1; // Reset search page
+        isSearchMode = true; // Switch to search mode
+        isFilterMode = false; // Disable filter mode
+        fetchSearchMovies(searchInput.value, searchPage);
+    }
+
+    function handleFilterSearch() {
+        filterPage = 1; // Reset filter page
+        isFilterMode = true; // Switch to filter mode
+        isSearchMode = false; // Disable search mode
+        fetchFilterSearch(filterPage);
+    }
 </script>
 
 <div class="flex items-center gap-5 justify-center flex-col">
     <h1 class="text-green-400">The Movie Browser</h1>
     <div class="relative">
         <input id="search" placeholder="Search a movie..." list="genre-list">
-        <button on:click={() => fetchSearchMovies(searchInput.value)}>Search</button>  
+        <button on:click={handleSearch}>Search</button>  
         <button on:click={showFilters}>Filter</button>
 
         {#if showFilter}
             <div class="absolute flex z-10 flex-col my-2 p-3 bg-red-400 w-full">       
                 <label>Genre</label>
                 <input id="genre" placeholder="Search genres..." list="genre-list" on:input={handleGenreInput}>
-                <input type="hidden" id="genre-id">
+                <input type="hidden" id="genre-id"> <!-- Store the numerical value -->
+
                 <datalist id="genre-list">
                     {#each data.genre as genre}
                         <option value={genre.name} data-id={genre.id}></option>        
@@ -110,29 +172,28 @@
                 <label>Release Year</label>
                 <div class="flex w-[90%] gap-2">
                     <div>
-                        <input id="releaseStart" class="w-[50px]" placeholder="From">  
+                        <input id="releaseStart" class="w-[50px]" placeholder="From" bind:value={releaseStart}>  
                     </div>
                     <div>
-                        <input id="releaseEnd" class="w-[50px]" placeholder="To">      
+                        <input id="releaseEnd" class="w-[50px]" placeholder="To" bind:value={releaseEnd}>      
                     </div>
                 </div>
 
                 <label>Rating</label>
-                <input id="rating">
+                <input id="rating" bind:value={rating}>
 
-                <button on:click={fetchFilterSearch}>Search</button>
+                <button on:click={handleFilterSearch}>Search</button>
             </div>
         {/if}
     </div>
 
-    {#if isLoading}
+    {#if isLoading && initialPage === 1}
         <!-- Show loading animation -->
         <div class="loader-container">
             <div class="loader"></div>
         </div>
     {:else}
         <div bind:this={movieContainer} class="grid lg:grid-cols-5 grid-cols-2">
-           
             {#each movies as movie (movie.id)}
                 <MovieComponent
                     title={movie.title}
@@ -141,13 +202,15 @@
                     genre_ids={movie.genre_ids}
                     poster_path={movie.poster_path}
                     data={movie}
-                    genre_list = {data.genre}
+                    genre_list={data.genre}
                     on:click={() => toggleSave(movie.id)}
                 />
             {/each}
         </div>
     {/if}
-    <div id="intersector">Loading more...</div>
+    {#if (isSearchMode && searchPage < totalSearchPages) || (isFilterMode && filterPage < totalFilterPages) || (!isSearchMode && !isFilterMode && initialPage < totalInitialPages)}
+        <div id="intersector">Loading more...</div>
+    {/if}
 </div>
 
 <style>
