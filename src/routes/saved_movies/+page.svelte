@@ -6,6 +6,5 @@
 <div class="flex items-center gap-2 flex-col justify-center">
     <div>Saved Movies</div>
     <SaveMovieComponent/>
-    <SaveMovieComponent/>
-    <SaveMovieComponent/>
+   
 </div>
