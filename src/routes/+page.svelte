@@ -1,5 +1,5 @@
 <script>
-    import { onMount } from 'svelte';
+    import { onMount, onDestroy } from 'svelte';
     import MovieComponent from '../lib/component/MovieComponent.svelte';
 
     export let data;
@@ -26,6 +26,11 @@
     let releaseEnd = '';
     let rating = '';
 
+    // Reactive variable for search query
+    let searchQuery = '';
+    let movieNames = []; // To store movie names for the dropdown
+    let debounceTimeout;
+
     onMount(async () => {
         searchInput = document.querySelector('#search');
         intersector = document.querySelector('#intersector');
@@ -36,7 +41,7 @@
             if (entries[0].isIntersecting && !isLoading) {
                 if (isSearchMode && searchPage < totalSearchPages) {
                     searchPage += 1;
-                    await fetchSearchMovies(searchInput.value, searchPage);
+                    await fetchSearchMovies(searchQuery, searchPage);
                 } else if (isFilterMode && filterPage < totalFilterPages) {
                     filterPage += 1;
                     await fetchFilterSearch(filterPage);
@@ -52,6 +57,16 @@
         });
 
         observer.observe(intersector);
+
+        // Add event listener to close dropdown when clicking outside
+        function handleClickOutside(event) {
+            if (searchDropdown && !searchDropdown.contains(event.target) && !searchInput.contains(event.target)) {
+                movieNames = []; // Close the dropdown
+            }
+        }
+
+        document.addEventListener('click', handleClickOutside);
+        onDestroy(() => document.removeEventListener('click', handleClickOutside));
     });
 
     function showFilters() {
@@ -79,7 +94,7 @@
     }
 
     async function fetchSearchMovies(title, page = 1) {
-        if(page === 1) isLoading = true; // Set loading to true before fetch
+        if (page === 1) isLoading = true; // Set loading to true before fetch
         try {
             const movieRes = await fetch(`/api/searchMovies?title=${encodeURIComponent(title)}&page=${page}`);
             if (!movieRes.ok) throw new Error(`Failed to search movies: ${movieRes.statusText}`);
@@ -98,7 +113,7 @@
     }
 
     async function fetchFilterSearch(page = 1) {
-        if(page === 1) isLoading = true; // Set loading to true before fetch
+        if (page === 1) isLoading = true; // Set loading to true before fetch
 
         console.log(`Fetching filtered movies, genre: ${genreId}, releaseYearStart: ${releaseStart}, releaseYearEnd: ${releaseEnd}, rating: ${rating}, page: ${page}`);
 
@@ -139,7 +154,7 @@
         searchPage = 1; // Reset search page
         isSearchMode = true; // Switch to search mode
         isFilterMode = false; // Disable filter mode
-        fetchSearchMovies(searchInput.value, searchPage);
+        fetchSearchMovies(searchQuery, searchPage);
     }
 
     function handleFilterSearch() {
@@ -148,12 +163,52 @@
         isSearchMode = false; // Disable search mode
         fetchFilterSearch(filterPage);
     }
+
+    function selectMovieName(name) {
+        searchQuery = name;
+        movieNames = []; // Clear the list after selection
+    }
+
+    // Debounce function
+    function debounce(fn, delay) {
+        return function(...args) {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(() => fn.apply(this, args), delay);
+        };
+    }
+
+    // Handle changes to searchQuery with debouncing
+    $: {
+        const searchQueryDebounced = debounce(async (query) => {
+            if (query.trim() !== '') {
+                console.log(`Making API request with searchQuery: ${query}`);
+                try {
+                    const response = await fetch(`/api/searchMovies?title=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+                    
+                    // Extract and store the names of the movies (limit to top 5)
+                    movieNames = data.results.slice(0, 5).map(movie => movie.title);
+                } catch (error) {
+                    console.error('Error fetching search results:', error);
+                }
+            } else {
+                movieNames = []; // Clear movie names if search query is empty
+            }
+        }, 500); // Debounce delay of 500ms
+
+        searchQueryDebounced(searchQuery);
+    }
 </script>
 
 <div class="flex items-center gap-5 justify-center flex-col">
     <h1 class="text-green-400">The Movie Browser</h1>
     <div class="relative">
-        <input id="search" placeholder="Search a movie..." list="genre-list">
+        <input id="search" placeholder="Search a movie..." bind:value={searchQuery} list="movie-names">
+        <datalist id="movie-names">
+            {#each movieNames as name}
+                <option value={name}></option>
+            {/each}
+        </datalist>
         <button on:click={handleSearch}>Search</button>  
         <button on:click={showFilters}>Filter</button>
 
