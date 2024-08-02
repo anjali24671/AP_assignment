@@ -1,40 +1,54 @@
 <script>
-    import {goto} from '$app/navigation'
+    import { goto } from '$app/navigation';
     import { setMovie } from '../../stores/detailMovieStore';
-  
+    import saveMovies from '../utils/saveMovies';
+    import removeMovie from '../utils/removeMovie';
+
     export let title;
     export let release_date;
     export let vote_average;
     export let genre_ids;
     export let poster_path;
     export let data;
-    export let genre_list
-
-    console.log(genre_list)
+    export let genre_list;
 
     let base_url = 'https://image.tmdb.org/t/p/w500';
+    let poster;
+    let save = false;
 
     // Dynamically create poster URL with cache-busting parameter
     $: poster = poster_path ? `${base_url}${poster_path}?${new Date().getTime()}` : null;
 
-    let save = false;
-
     // Compute genre names based on genre_ids
     $: genres = genre_ids
         ? genre_ids.map(id => {
-            // Use optional chaining to safely access data.genre
             const genre = genre_list?.find(g => g.id === id);
             return genre ? genre.name : 'Unknown';
         }).join(', ')
         : 'Unknown';
 
+    // Function to check if the movie is saved
+    function checkIfSaved(movieId) {
+        const savedMovies = JSON.parse(localStorage.getItem('saveMovies')) || [];
+        return savedMovies.some(movie => movie.id === movieId);
+    }
+
+    // Initialize the save state based on localStorage
+    $: save = checkIfSaved(data.id);
+
     function toggleSave() {
-        save = !save;
+        if (save) {
+            removeMovie(data.id);
+            save = false;
+        } else {
+            saveMovies(data);
+            save = true;
+        }
     }
 
     function gotoDetail() {
         setMovie(data); // Set the movie data in the store
-        goto('/detail/hello'); // Navigate to the detail page
+        goto(`/detail/${data.id}`); // Navigate to the detail page
     }
 </script>
 
