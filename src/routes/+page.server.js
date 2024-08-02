@@ -1,39 +1,26 @@
+// src/routes/+page.js
 import { TMDB_ACCESS_TOKEN } from '$env/static/private';
+import { json } from '@sveltejs/kit';
 
-export async function load() {
-    const url = 'https://api.themoviedb.org/3/movie/popular';
-
-    const options = {
-        method: 'GET',
-        headers: {
-        'accept': 'application/json',
-        'Authorization': `Bearer ${TMDB_ACCESS_TOKEN}`
-        }
-    };
-
+export async function load({ fetch }) {
     try {
-        // const response = await fetch(url, options);
-
-        // if (!response.ok) {
-        // throw new Error(`HTTP error! Status: ${response.status}`);
-        // }
-
-        // const data = await response.json();
-        // console.log("Response:", data);
-
-        return {
-        props: {
-            movieData: "data"
-        }
-        };
-    } catch (err) {
-        console.error('Error fetching data:', err);
+        const genreRes = await fetch('https://api.themoviedb.org/3/genre/movie/list', {
+            method: "GET",
+            headers: {
+                'accept': 'application/json',
+                'Authorization': `Bearer ${TMDB_ACCESS_TOKEN}`
+            }
+        });
+        const genre = await genreRes.json();
+        console.log("genre",genre);
 
         return {
-        props: {
-            movieData: null,
-            error: err.message
-        }
+            genre: genre.genres
+        };
+    } catch (e) {
+        console.error('Error fetching genres:', e);
+        return {
+            genre: []
         };
     }
-    }
+}
