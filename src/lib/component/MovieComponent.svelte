@@ -8,7 +8,9 @@
     export let genre_ids;
     export let poster_path;
     export let data;
-    console.log(data)
+    export let genre_list
+
+    console.log(genre_list)
 
     let base_url = 'https://image.tmdb.org/t/p/w500';
 
@@ -21,7 +23,7 @@
     $: genres = genre_ids
         ? genre_ids.map(id => {
             // Use optional chaining to safely access data.genre
-            const genre = data.genre?.find(g => g.id === id);
+            const genre = genre_list?.find(g => g.id === id);
             return genre ? genre.name : 'Unknown';
         }).join(', ')
         : 'Unknown';

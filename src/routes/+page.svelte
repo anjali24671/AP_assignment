@@ -132,6 +132,7 @@
         </div>
     {:else}
         <div bind:this={movieContainer} class="grid lg:grid-cols-5 grid-cols-2">
+           
             {#each movies as movie (movie.id)}
                 <MovieComponent
                     title={movie.title}
@@ -140,6 +141,7 @@
                     genre_ids={movie.genre_ids}
                     poster_path={movie.poster_path}
                     data={movie}
+                    genre_list = {data.genre}
                     on:click={() => toggleSave(movie.id)}
                 />
             {/each}
