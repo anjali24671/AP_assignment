@@ -60,7 +60,7 @@
 
             </button>
             <div class="rating-badge">
-                {vote_average}
+                {vote_average.toFixed(1)}
             </div>
         </div>
         <div class="movie-details">

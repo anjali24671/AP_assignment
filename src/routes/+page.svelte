@@ -9,8 +9,10 @@
     let searchInput;
     let showFilter = false;
     let movies = [];
+
     let savedMovies = new Set(); // To keep track of saved movie IDs
     let isLoading = true; // State variable for loading
+    let searchDropdown;
     let initialPage = 1; // Start from page 1 for initial movies
     let searchPage = 1; // Start from page 1 for search results
     let filterPage = 1; // Start from page 1 for filtered results
@@ -34,6 +36,7 @@
     onMount(async () => {
         searchInput = document.querySelector('#search');
         intersector = document.querySelector('#intersector');
+        searchDropdown = document.querySelector('#movie-names');
         await fetchInitialMovies(initialPage);
 
         // Setup Intersection Observer for infinite scrolling

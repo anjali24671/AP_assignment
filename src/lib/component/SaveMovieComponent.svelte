@@ -13,6 +13,8 @@
         }
     });
 
+  
+
     function removeMovie(id) {
         saveMovies = saveMovies.filter(movie => movie.id !== id);
         localStorage.setItem('saveMovies', JSON.stringify(saveMovies));
@@ -36,7 +38,7 @@
                 </button>
                 <div class="movie-details">
                     <h1 class="movie-title">{movie.title}</h1>
-                    <h2 class="movie-genres">{movie.genre_ids.join(', ')}</h2>
+                   
                     <div class="movie-overview">{movie.overview}</div>
                     <div class="release-date">Release Date: {movie.release_date.split('-')[0]}</div>
                     <button class="remove-button" on:click={() => removeMovie(movie.id)}>Remove</button>
